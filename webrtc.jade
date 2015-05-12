@@ -1,0 +1,31 @@
+head
+  title Todo List
+
+body
+  .container
+    header
+      h1 Todo List (!{incompleteCount})
+      label.hide-completed
+        input(type='checkbox', checked=hideCompleted)
+        span Hide Completed Tasks
+      +loginButtons
+      if currentUser
+        form.new-task
+          input(type='text', name='text', placeholder='Type to add new tasks')
+    ul
+      each tasks
+        +task
+
+template(name='task')
+  li(class="!{'checked' if checked} !{'private' if private}")
+    button.delete &times;
+    input.toggle-checked(type='checkbox', checked="!{checked}")
+    if isOwner
+      button.toggle-private
+        if private
+          div Private
+        else
+          div Public
+    span.text
+      strong !{username}
+      span - !{text}
