@@ -1,20 +1,15 @@
 head
-  title Todo List
+  title system
 
 body
   .container
     header
-      h1 Todo List (!{incompleteCount})
-      label.hide-completed
-        input(type='checkbox', checked=hideCompleted)
-        span Hide Completed Tasks
+      h1 system
       +loginButtons
-      if currentUser
-        form.new-task
-          input(type='text', name='text', placeholder='Type to add new tasks')
-    ul
-      each tasks
-        +task
+    if currentUser
+      +support
+    else
+      +customer
 
 template(name='task')
   li(class="!{'checked' if checked} !{'private' if private}")
@@ -26,6 +21,58 @@ template(name='task')
           div Private
         else
           div Public
-    span.text
-      strong !{username}
-      span - !{text}
+    +test
+
+template(name='test')
+  span.text
+  strong !{username}
+  span - !{text}
+
+template(name='support')
+  if connect
+    +connecting
+  else
+    +supportDefault
+
+template(name='supportDefault')
+  .state
+    div 現在の状態: !{myStateMessage}
+    button.state-away 離席中
+    button.state-chat テキストチャットのみ
+    button.state-audio ボイスチャット可
+    button.state-video ビデオチャット可
+  .only-me
+    span 自分の問い合わせのみ表示
+    input.toggle-only-me(type='checkbox', checked="!{onlyMe}")
+  ul.contacts
+    each contacts
+      +contact
+
+template(name='contact')
+  div !{_id}
+
+template(name='customer')
+  if connect
+    +connecting
+  else
+    +customerDefault
+
+template(name='customerDefault')
+  .message !{stateMessage}
+  button.open-video ビデオチャットで問い合わせを行う
+  button.open-audio ボイスチャットで問い合わせを行う
+  button.open-chat テキストチャットで問い合わせを行う
+
+template(name='calling')
+
+template(name='connecting')
+  video(id='remoteVideo', width='400', height='300', autoplay='1')
+  video(id='localVideo', width='400', height='300', autoplay='1')
+  ul.messages
+    each messages
+      +message
+  form.new-message
+    input(type='text', name='text')
+
+template(name='message')
+  li.message !{text}
