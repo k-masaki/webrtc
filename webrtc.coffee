@@ -13,10 +13,45 @@ if Meteor.isClient
 
   Template.support.onCreated ->
     @subscribe 'contacts'
+    Meteor.call 'updateState', null, 'wating'
 
   Template.support.helpers
     connect: ->
       Session.get('page') == 'connecting'
+
+  Template.supportDefault.onCreated ->
+    peer = new Peer Meteor.userId(), key: apiKey
+    navigator.getUserMedia ||= navigator.webkitGetUserMedia || navigator.mozGetUserMedia
+    peer.on 'call', (call)->
+      navigator.getUserMedia {
+        video: true
+        audio: true
+      }, ((stream)->
+        Meteor.call 'addContact', (error, contactId)->
+          Session.set 'contactId', contactId
+          call.answer stream, contactId
+          call.on 'stream', (remoteStream)->
+            Session.set 'type', (if remoteStream.getVideoTracks().length then 'video' else 'audio')
+            Session.set 'page', 'connecting'
+            Meteor.call 'updateContactType', contactId, Session.get('type')
+            Meteor.setTimeout ->
+              if Session.get('type') == 'video'
+                localVideo = document.getElementById 'localVideo'
+                localVideo.src = window.URL.createObjectURL stream
+                remoteVideo = document.getElementById 'remoteVideo'
+                remoteVideo.src = window.URL.createObjectURL remoteStream
+              else if Session.get('type') == 'audio'
+                localAudio = document.getElementById 'localAudio'
+                localAudio.src = window.URL.createObjectURL stream
+                remoteAudio = document.getElementById 'remoteAudio'
+                remoteAudio.src = window.URL.createObjectURL remoteStream
+            , 500
+      ), (err) ->
+        console.log 'Failed to get local stream', err
+    peer.on 'connection', (conn)->
+      Meteor.setTimeout ->
+        conn.send Session.get('contactId')
+      , 500
 
   Template.supportDefault.helpers
     contacts: ->
@@ -35,31 +70,7 @@ if Meteor.isClient
         when 'audio' then 'ボイスチャット可'
         when 'video' then 'ビデオチャット可'
 
-  Template.supportDefault.onCreated ->
-    peer = new Peer Meteor.userId(), key: apiKey
-    navigator.getUserMedia ||= navigator.webkitGetUserMedia || navigator.mozGetUserMedia
-    peer.on 'call', (call)->
-      navigator.getUserMedia {
-        video: true
-        audio: true
-      }, ((stream)->
-        Meteor.call 'addContact', (error, contactId)->
-          Session.set 'contactId', contactId
-          call.answer stream, contactId
-          Session.set 'page', 'connecting'
-          call.on 'stream', (remoteStream)->
-            Meteor.setTimeout ->
-              localVideo = document.getElementById 'localVideo'
-              localVideo.src = window.URL.createObjectURL stream
-              remoteVideo = document.getElementById 'remoteVideo'
-              remoteVideo.src = window.URL.createObjectURL remoteStream
-            , 500
-      ), (err) ->
-        console.log 'Failed to get local stream', err
-    peer.on 'connection', (conn)->
-      Meteor.setTimeout ->
-        conn.send Session.get('contactId')
-      , 500
+
 
   Template.supportDefault.events
     'click .state-away': ->
@@ -87,6 +98,20 @@ if Meteor.isClient
   Template.customer.events
 
   Template.customerDefault.helpers
+    videoStatusMessage: ->
+      if States.findOne {type: 'video', connecting: 'wating'}
+        '利用できます'
+      else
+        '現在利用できません'
+
+    audioStatusMessage: ->
+      if States.findOne {$or: [{type: 'video'}, {type: 'audio'}], connecting: 'wating'}
+        '利用できます'
+      else
+        '現在利用できません'
+
+    chatStatusMessage: ->
+      '現在利用できません'
 
   Template.customerDefault.events
     'click .open-video': ->
@@ -96,7 +121,7 @@ if Meteor.isClient
         video: true
         audio: true
       }, ((stream)->
-        support = States.findOne type: 'video'
+        support = States.findOne {type: 'video', connecting: 'wating'}
         unless support
           alert '現在対応できるものがおりません。しばらくしてから再度お問い合わせください'
           return
@@ -107,6 +132,7 @@ if Meteor.isClient
           conn.on 'open', ->
             conn.on 'data', (contactId)->
               Session.set 'contactId', contactId
+              Session.set 'type', 'video'
               Session.set 'page', 'connecting'
               Meteor.setTimeout ->
                 localVideo = document.getElementById 'localVideo'
@@ -124,25 +150,30 @@ if Meteor.isClient
         video: false
         audio: true
       }, ((stream)->
-        support = States.findOne $or: [{type: 'video'}, {type: 'audio'}]
+        support = States.findOne {$or: [{type: 'video'}, {type: 'audio'}], connecting: 'wating'}
         unless support
           alert '現在対応できるものがおりません。しばらくしてから再度お問い合わせください'
           return
         Session.set 'page', 'calling'
         call = peer.call support.userId, stream
         call.on 'stream', (remoteStream, contactId)->
-          Session.set 'contactId', contactId
-          Session.set 'page', 'connecting'
-          Meteor.setTimeout ->
-            localVideo = document.getElementById 'localVideo'
-            localVideo.src = window.URL.createObjectURL stream
-            remoteVideo = document.getElementById 'remoteVideo'
-            remoteVideo.src = window.URL.createObjectURL remoteStream
-          , 500
+          conn = peer.connect support.userId
+          conn.on 'open', ->
+            conn.on 'data', (contactId)->
+              Session.set 'contactId', contactId
+              Session.set 'type', 'audio'
+              Session.set 'page', 'connecting'
+              Meteor.setTimeout ->
+                localAudio = document.getElementById 'localAudio'
+                localAudio.src = window.URL.createObjectURL stream
+                remoteAudio = document.getElementById 'remoteAudio'
+                remoteAudio.src = window.URL.createObjectURL remoteStream
+              , 500
       ), (err)->
         console.log 'Failed to get local stream', err
 
     'click .open-chat': ->
+      alert '現在対応できるものがおりません。しばらくしてから再度お問い合わせください'
 
 
   Template.contact.helpers
@@ -155,10 +186,18 @@ if Meteor.isClient
 
   Template.connecting.onCreated ->
     @subscribe 'messages', Session.get('contactId')
+    if Meteor.userId()
+      Meteor.call 'updateState', null, 'connecting'
 
   Template.connecting.helpers
     messages: ->
       Messages.find()
+
+    isVideo: ->
+      Session.get('type') == 'video'
+
+    isAudio: ->
+      Session.get('type') == 'audio'
 
   Template.connecting.events
     'submit .new-message': (event)=>
@@ -170,9 +209,19 @@ if Meteor.isClient
     'click .close': ->
 
   Template.message.helpers
+    name: ->
+      if Meteor.userId()
+        if @userId
+          'あなた'
+        else
+          'お客様'
+      else
+        if @userId
+          'サポート'
+        else
+          'あなた'
 
   Template.message.events
-
 
   Accounts.ui.config
     passwordSignupFields: 'USERNAME_ONLY'
@@ -190,32 +239,18 @@ if Meteor.isServer
     States.find()
 
 Meteor.methods
-  deleteTask: (taskId)->
-    task = Tasks.findOne taskId
-    if task.private && task.owner != Meteor.userId()
-      throw new Meteor.Error 'not-authorized'
-    Tasks.remove taskId
-
-  setChecked: (taskId, setChecked)->
-    task = Tasks.findOne taskId
-    if task.private && task.owner != Meteor.userId()
-      throw new Meteor.Error 'not-authorized'
-    Tasks.update taskId, $set: checked: setChecked
-
-  setPrivate: (taskId, setToPrivate)->
-    task = Tasks.findOne taskId
-
-    if task.owner != Meteor.userId()
-      throw new Meteor.error 'not-authorized'
-
-    Tasks.update taskId, {$set: {private: setToPrivate}}
-
-  addContact: (type)->
+  addContact: (type=null)->
     unless Meteor.userId()
       throw new Meteor.Error 'not-authorized'
     Contacts.insert
       userId: Meteor.userId()
       type: type
+
+  updateContactType: (id, type)->
+    contact = Contacts.findOne _id: id, userId: Meteor.userId()
+    unless contact
+     throw new Meteor.Error 'not-found'
+    Contacts.update id, {$set: {type: type}}
 
   addMessage: (contactId, action, text)->
     contact = Contacts.findOne contactId

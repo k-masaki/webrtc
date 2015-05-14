@@ -1,10 +1,10 @@
 head
-  title system
+  title Support System
 
 body
   .container
     header
-      h1 system
+      h1 Support System
       +loginButtons
     if currentUser
       +support
@@ -41,12 +41,12 @@ template(name='supportDefault')
     button.state-chat テキストチャットのみ
     button.state-audio ボイスチャット可
     button.state-video ビデオチャット可
-  .only-me
-    span 自分の問い合わせのみ表示
-    input.toggle-only-me(type='checkbox', checked="!{onlyMe}")
-  ul.contacts
-    each contacts
-      +contact
+  //- .only-me
+  //-   span 自分の問い合わせのみ表示
+  //-   input.toggle-only-me(type='checkbox', checked="!{onlyMe}")
+  //- ul.contacts
+  //-   each contacts
+  //-     +contact
 
 template(name='contact')
   div !{_id}
@@ -58,7 +58,9 @@ template(name='customer')
     +customerDefault
 
 template(name='customerDefault')
-  .message !{stateMessage}
+  div ビデオチャット: !{videoStatusMessage}
+  div オーディオチャット: !{audioStatusMessage}
+  div テキストチャット: !{chatStatusMessage}
   button.open-video ビデオチャットで問い合わせを行う
   button.open-audio ボイスチャットで問い合わせを行う
   button.open-chat テキストチャットで問い合わせを行う
@@ -66,8 +68,12 @@ template(name='customerDefault')
 template(name='calling')
 
 template(name='connecting')
-  video(id='remoteVideo', width='400', height='300', autoplay='1')
-  video(id='localVideo', width='400', height='300', autoplay='1')
+  if isVideo
+    video(id='remoteVideo', width='400', height='300', autoplay='1')
+    video(id='localVideo', width='400', height='300', autoplay='1')
+  else if isAudio
+    audio(id='remoteAudio', width='400', height='300', autoplay='1')
+    audio(id='localAudio', width='400', height='300', autoplay='1')
   ul.messages
     each messages
       +message
@@ -75,4 +81,6 @@ template(name='connecting')
     input(type='text', name='text')
 
 template(name='message')
-  li.message !{text}
+  li.message
+    strong !{name}
+    div !{text}
