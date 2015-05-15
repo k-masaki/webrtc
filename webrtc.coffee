@@ -63,6 +63,18 @@ if Meteor.isClient
     onlyMe: ->
       Session.get 'onlyMe'
 
+    myStateIsAway: ->
+      States.findOne(userId: Meteor.userId())?.type == 'away'
+
+    myStateIsChat: ->
+      States.findOne(userId: Meteor.userId())?.type == 'chat'
+
+    myStateIsAudio: ->
+      States.findOne(userId: Meteor.userId())?.type == 'audio'
+
+    myStateIsVideo: ->
+      States.findOne(userId: Meteor.userId())?.type == 'video'
+
     myStateMessage: ->
       switch States.findOne(userId: Meteor.userId())?.type
         when 'away'  then '離席中'
@@ -98,6 +110,15 @@ if Meteor.isClient
   Template.customer.events
 
   Template.customerDefault.helpers
+    videoStatus: ->
+      !!States.findOne {type: 'video', connecting: 'wating'}
+
+    audioStatus: ->
+      !!States.findOne {$or: [{type: 'video'}, {type: 'audio'}], connecting: 'wating'}
+
+    chatStatus: ->
+      false
+
     videoStatusMessage: ->
       if States.findOne {type: 'video', connecting: 'wating'}
         '利用できます'
@@ -115,6 +136,10 @@ if Meteor.isClient
 
   Template.customerDefault.events
     'click .open-video': ->
+      support = States.findOne {type: 'video', connecting: 'wating'}
+      unless support
+        alert '現在対応できるものがおりません。しばらくしてから再度お問い合わせください'
+        return
       peer = new Peer key: apiKey
       navigator.getUserMedia ||= navigator.webkitGetUserMedia || navigator.mozGetUserMedia
       navigator.getUserMedia {
@@ -144,6 +169,10 @@ if Meteor.isClient
         console.log 'Failed to get local stream', err
 
     'click .open-audio': ->
+      support = States.findOne {$or: [{type: 'video'}, {type: 'audio'}], connecting: 'wating'}
+      unless support
+        alert '現在対応できるものがおりません。しばらくしてから再度お問い合わせください'
+        return
       peer = new Peer key: apiKey
       navigator.getUserMedia ||= navigator.webkitGetUserMedia || navigator.mozGetUserMedia
       navigator.getUserMedia {
@@ -177,6 +206,17 @@ if Meteor.isClient
 
 
   Template.contact.helpers
+    time: ->
+      @createdAt.toLocaleString()
+
+    typeStr: ->
+      switch @type
+        when 'video' then 'ビデオチャット'
+        when 'audio' then 'ボイスチャット'
+        when 'chat' then 'テキストチャット'
+
+    support: ->
+      @username
 
   Template.contact.events
 
@@ -212,7 +252,7 @@ if Meteor.isClient
     name: ->
       if Meteor.userId()
         if @userId
-          'あなた'
+          'サポート'
         else
           'お客様'
       else
@@ -244,7 +284,9 @@ Meteor.methods
       throw new Meteor.Error 'not-authorized'
     Contacts.insert
       userId: Meteor.userId()
+      username: Meteor.user().username
       type: type
+      createdAt: new Date
 
   updateContactType: (id, type)->
     contact = Contacts.findOne _id: id, userId: Meteor.userId()
@@ -279,3 +321,7 @@ Meteor.methods
         type: type
         connecting: connecting
 
+orgLogout = Meteor.logout
+Meteor.logout = (func)->
+  Meteor.call 'updateState', null, 'logout'
+  orgLogout func
