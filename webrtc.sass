@@ -5,6 +5,7 @@ body
   padding: 0
   margin: 0
   font-size: 14px
+  box-sizing: border-box
 
 header
   z-index: 1005
@@ -60,6 +61,10 @@ li
       padding: 20px
       .current-state
         margin-bottom: 10px
+        .can-use
+          color: green
+        .cannot-use
+          color: red
     .only-me
       width: 100%
       border-top: #ccc solid 1px
@@ -89,5 +94,50 @@ li
     .call-btn
       margin: 5px
 
-
 #connecting
+  padding: 20px
+  .video
+    position: fixed
+    top: 120px
+    left: 0
+    bottom: 0
+    width: 400px
+    padding: 20px
+    border-right: #ccc solid 1px
+    .remote
+      position: absolute
+      left: 20px
+      width: 90%
+    .local
+      position: absolute
+      left: 20px
+      width: 20%
+  .audio
+    position: fixed
+    top: 120px
+    left: 0
+    bottom: 0
+    width: 400px
+    padding: 20px
+    border-right: #ccc solid 1px
+    .remote
+      position: absolute
+      left: 20px
+      width: 90%
+
+  .message-area
+    margin-left: 420px
+    .new-message
+      border-top: #ccc solid 1px
+      background: white
+      position: fixed
+      left: 0
+      right: 0
+      bottom: 0
+      padding: 10px
+      margin: 0
+      input
+        margin: 0
+        width: 98%
+    .messages
+      margin-bottom: 45px

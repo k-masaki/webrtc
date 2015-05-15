@@ -22,7 +22,11 @@ template(name='supportDefault')
   #support-default
     .fix-header
       .state
-        .current-state 現在の状態: !{myStateMessage}
+        .current-state 現在の状態:
+          if myStateIsAway
+            span.cannot-use !{myStateMessage}
+          else
+            span.can-use !{myStateMessage}
         .btn-group
           if myStateIsAway
             button.btn.state-away.active 離席中
@@ -94,16 +98,20 @@ template(name='calling')
 template(name='connecting')
   #connecting
     if isVideo
-      video(id='remoteVideo', width='400', height='300', autoplay='1')
-      video(id='localVideo', style="-webkit-transform: scaleX(-1);", width='400', height='300', autoplay='1')
+      .video
+        video.remote(id='remoteVideo', autoplay='1')
+        video.local(id='localVideo', style="-webkit-transform: scaleX(-1);", autoplay='1')
     else if isAudio
-      audio(id='remoteAudio', width='400', height='300', autoplay='1')
-      audio(id='localAudio', width='400', height='300', autoplay='1')
-    ul.messages
-      each messages
-        +message
-    form.new-message
-      input(type='text', name='text')
+      .audio
+        img(src='http://i.ytimg.com/vi/EYHfaFKGaKQ/maxresdefault.jpg')
+        audio(id='remoteAudio', autoplay='1')
+        audio(id='localAudio', autoplay='1')
+    .message-area
+      ul.messages
+        each messages
+          +message
+      form.new-message
+        input(type='text', name='text')
 
 template(name='message')
   li.message

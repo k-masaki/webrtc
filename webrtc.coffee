@@ -7,10 +7,6 @@ apiKey   = 'scgmaljt0tg1fw29'
 if Meteor.isClient
   Meteor.subscribe 'states'
 
-  Template.body.helpers
-
-  Template.body.events
-
   Template.support.onCreated ->
     @subscribe 'contacts'
     Meteor.call 'updateState', null, 'wating'
@@ -82,8 +78,6 @@ if Meteor.isClient
         when 'audio' then 'ボイスチャット可'
         when 'video' then 'ビデオチャット可'
 
-
-
   Template.supportDefault.events
     'click .state-away': ->
       Meteor.call 'updateState', 'away'
@@ -107,8 +101,6 @@ if Meteor.isClient
     calling: ->
       Session.get('page') == 'calling'
 
-  Template.customer.events
-
   Template.customerDefault.helpers
     videoStatus: ->
       !!States.findOne {type: 'video', connecting: 'wating'}
@@ -118,21 +110,6 @@ if Meteor.isClient
 
     chatStatus: ->
       false
-
-    videoStatusMessage: ->
-      if States.findOne {type: 'video', connecting: 'wating'}
-        '利用できます'
-      else
-        '現在利用できません'
-
-    audioStatusMessage: ->
-      if States.findOne {$or: [{type: 'video'}, {type: 'audio'}], connecting: 'wating'}
-        '利用できます'
-      else
-        '現在利用できません'
-
-    chatStatusMessage: ->
-      '現在利用できません'
 
   Template.customerDefault.events
     'click .open-video': ->
@@ -150,7 +127,7 @@ if Meteor.isClient
         unless support
           alert '現在対応できるものがおりません。しばらくしてから再度お問い合わせください'
           return
-        Session.set 'page', 'calling'
+        # Session.set 'page', 'calling'
         call = peer.call support.userId, stream
         call.on 'stream', (remoteStream, contactId)->
           conn = peer.connect support.userId
@@ -183,7 +160,7 @@ if Meteor.isClient
         unless support
           alert '現在対応できるものがおりません。しばらくしてから再度お問い合わせください'
           return
-        Session.set 'page', 'calling'
+        # Session.set 'page', 'calling'
         call = peer.call support.userId, stream
         call.on 'stream', (remoteStream, contactId)->
           conn = peer.connect support.userId
@@ -218,12 +195,6 @@ if Meteor.isClient
     support: ->
       @username
 
-  Template.contact.events
-
-  Template.calling.helpers
-
-  Template.calling.events
-
   Template.connecting.onCreated ->
     @subscribe 'messages', Session.get('contactId')
     if Meteor.userId()
@@ -242,11 +213,15 @@ if Meteor.isClient
   Template.connecting.events
     'submit .new-message': (event)=>
       text = event.target.text.value
+      return false unless text
       Meteor.call 'addMessage', Session.get('contactId'), null, text
       event.target.text.value = ''
       false
 
-    'click .close': ->
+  Template.message.onRendered ->
+    obj = document.body
+    return unless obj
+    obj.scrollTop = obj.scrollHeight
 
   Template.message.helpers
     name: ->
@@ -260,8 +235,6 @@ if Meteor.isClient
           'サポート'
         else
           'あなた'
-
-  Template.message.events
 
   Accounts.ui.config
     passwordSignupFields: 'USERNAME_ONLY'
