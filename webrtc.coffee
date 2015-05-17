@@ -2,7 +2,7 @@ Contacts = new Mongo.Collection 'contacts'
 Messages = new Mongo.Collection 'messages'
 States   = new Mongo.Collection 'states'
 
-apiKey   = 'scgmaljt0tg1fw29'
+apiKey   = 'aum2y65m958nnrk9'
 
 if Meteor.isClient
   Meteor.subscribe 'states'

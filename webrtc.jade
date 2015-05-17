@@ -32,10 +32,10 @@ template(name='supportDefault')
             button.btn.state-away.active 離席中
           else
             button.btn.state-away 離席中
-          if myStateIsChat
-            button.btn.state-chat.active テキストチャットのみ
-          else
-            button.btn.state-chat テキストチャットのみ
+          //- if myStateIsChat
+          //-   button.btn.state-chat.active テキストチャットのみ
+          //- else
+          //-   button.btn.state-chat テキストチャットのみ
           if myStateIsAudio
             button.btn.state-audio.active ボイスチャット可
           else
@@ -74,11 +74,11 @@ template(name='customerDefault')
           span.can-use 利用できます
         else
           span.cannot-use 現在利用できません
-      .chat-state テキストチャット:
-        if textStatus
-          span.can-use 利用できます
-        else
-          span.cannot-use 現在利用できません
+      //- .chat-state テキストチャット:
+      //-   if textStatus
+      //-     span.can-use 利用できます
+      //-   else
+      //-     span.cannot-use 現在利用できません
     .call-btns
       if videoStatus
         button.btn.call-btn.open-video ビデオチャットで問い合わせ
@@ -88,10 +88,10 @@ template(name='customerDefault')
         button.btn.call-btn.open-audio ボイスチャットで問い合わせ
       else
         button.btn.call-btn.open-audio.disabled ボイスチャットで問い合わせ
-      if chatStatus
-        button.btn.call-btn.open-chat テキストチャットで問い合わせ
-      else
-        button.btn.call-btn.open-chat.disabled テキストチャットで問い合わせ
+      //- if chatStatus
+      //-   button.btn.call-btn.open-chat テキストチャットで問い合わせ
+      //- else
+      //-   button.btn.call-btn.open-chat.disabled テキストチャットで問い合わせ
 
 template(name='calling')
 
